@@ -9,19 +9,19 @@ namespace Packet_Sniffer
 {
     public class PacketIP
     {
-        private byte      _bVersionAndHeader;     //8 bits for version and header (4 bits version + 4bits header)
-        private byte      _bTypeOfService;        //8 bits for type of service (TOS)(indicates the quality of service)
-        private ushort    _usTotalLenght;         //16 bits for total lenght of datagram    
-        private ushort    _usIdentification;      //16 bits for identification ( this value assigned by the sender)    
-        private ushort    _usFlagsAndOffset;      //16 bits for flags and Fragment offset   
-        private byte      _bTTL;                  //8 bits for timto live(TTL) 
-        private byte      _bProtocol;             //8 bits for next level protocol
-        private short     _sChecksum;             //16 bits for check sum (this checksum is for header only)    
-                                                   
-        private uint      _uiSourceAddress;       //32 bits for source address
-        private uint      _uiDestinationAddress;  //32 bits for destination address
-        
-        private byte      _bHeaderLength;         //8 bits for IP header lenght
+        public byte      _bVersionAndHeader { get; set; }      //8 bits for version and header (4 bits version + 4bits header)
+        public byte      _bTypeOfService { get; set; }         //8 bits for type of service (TOS)(indicates the quality of service)
+        public ushort    _usTotalLenght { get; set; }          //16 bits for total lenght of datagram    
+        public ushort    _usIdentification { get; set; }       //16 bits for identification ( this value assigned by the sender)    
+        public ushort    _usFlagsAndOffset { get; set; }       //16 bits for flags and Fragment offset   
+        public byte      _bTTL { get; set; }                   //8 bits for timto live(TTL) 
+        public byte      _bProtocol { get; set; }              //8 bits for next level protocol
+        public short     _sChecksum { get; set; }              //16 bits for check sum (this checksum is for header only)    
+
+        public uint      _uiSourceAddress { get; set; }        //32 bits for source address
+        public uint      _uiDestinationAddress { get; set; }   //32 bits for destination address
+
+        public byte      _bHeaderLength { get; set; }          //8 bits for IP header lenght
            
         private byte[]    byIPData = new byte[4096];  // data carried by IP packet 
 

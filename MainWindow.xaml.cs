@@ -30,7 +30,7 @@ namespace Packet_Sniffer
         private bool isCapturing;
         private Socket internetSocket;
         private byte[] byteData = new byte[4096];
-        Thread captureThread;
+        //Thread captureThread;
         Dictionary<string, PacketInfo> pkgBuffer = new Dictionary<string, PacketInfo>();
         int maxBufferSize = 1000;
 
@@ -42,7 +42,6 @@ namespace Packet_Sniffer
 
         private void Start_Button_Click(object sender, RoutedEventArgs e)
         {
-            //dataGrid.Items.Add(new PacketData { Number = "1", Time_Stamp = "10:00", Source = "Me", Destination = "Me" });
 
             if (interfaceSelector.Text == "")
             {
@@ -72,7 +71,7 @@ namespace Packet_Sniffer
                                                true);                           //option to true
 
                     byte[] byIn= new byte[4] { 1, 0, 0, 0 };
-                    byte[] byOut = new byte[4]; //Capture outgoing packets
+                    byte[] byOut = new byte[4] { 1, 0, 0, 0 }; //Capture outgoing packets
 
                     //Socket.IOControl is analogous to the WSAIoctl method of Winsock 2
                     internetSocket.IOControl(IOControlCode.ReceiveAll,              //Equivalent to SIO_RCVALL constant
@@ -81,13 +80,13 @@ namespace Packet_Sniffer
                                          byOut);
 
                     //Start receiving the packets asynchronously
-                    //internetSocket.BeginReceive(byteData, 0, byteData.Length, SocketFlags.None,
-                    //    new AsyncCallback(Packet_Recieved), null);
+                    internetSocket.BeginReceive(byteData, 0, byteData.Length, SocketFlags.None,
+                        new AsyncCallback(Packet_Recieved), null);
 
                     //Capture using a thread
-                    captureThread = new Thread(Packet_Recieved);
+                    /*captureThread = new Thread(Packet_Recieved);
                     captureThread.Name = "Capture Thread";
-                    captureThread.Start();
+                    captureThread.Start();*/
 
                 }
                 catch (Exception ex)
@@ -100,8 +99,8 @@ namespace Packet_Sniffer
                 isCapturing = false;
                 Start_Button.Content = "Start";
 
-                if (captureThread.IsAlive)
-                    captureThread.Abort();
+                //if (captureThread.IsAlive)
+                    //captureThread.Abort();
 
                 //To stop capturing the packets close the socket
                 internetSocket.Shutdown(SocketShutdown.Both);
@@ -111,16 +110,16 @@ namespace Packet_Sniffer
             }
         }
 
-        private void Packet_Recieved()
+        private void Packet_Recieved(IAsyncResult receivedPacket)
         {
 
-            while(isCapturing)
+            /*while(isCapturing)
             {
                 try
                 {
                     //int nReceived = internetSocket.EndReceive(receivedPacket);
 
-                    int bytesReceived = internetSocket.Receive(byteData, 0, byteData.Length, SocketFlags.None);
+                    //int bytesReceived = internetSocket.Receive(byteData, 0, byteData.Length, SocketFlags.None);
 
                     //Analyze the bytes received...
                     if (bytesReceived > 0)
@@ -143,12 +142,40 @@ namespace Packet_Sniffer
                     //    internetSocket.BeginReceive(byteData, 0, byteData.Length, SocketFlags.None,
                     //        new AsyncCallback(Packet_Recieved), null);
                     //}
-                }
-                catch (Exception ex)
+                }*/
+
+            try
+            {
+                int bytesReceived = internetSocket.EndReceive(receivedPacket);
+
+                //Analyze the bytes received...
+                if (bytesReceived > 0)
                 {
-                    MessageBox.Show(ex.Message, "Packet Sniffer", MessageBoxButton.OK, MessageBoxImage.Error);
+                    ParseData(byteData, bytesReceived);
+                }
+
+                if (isCapturing)
+                {
+                    Array.Clear(byteData, 0, byteData.Length);
+
+                    internetSocket.BeginReceive(byteData, 0, byteData.Length, SocketFlags.None,
+                         new AsyncCallback(Packet_Recieved), null);
                 }
             }
+            catch (ObjectDisposedException ex)
+            {
+                Console.WriteLine(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                //MessageBox.Show(ex.Message, "Packet Sniffer", MessageBoxButton.OK, MessageBoxImage.Error);
+
+                Console.Write(ex.Message + "\r\n");
+
+                internetSocket.BeginReceive(byteData, 0, byteData.Length, SocketFlags.None,
+                            new AsyncCallback(Packet_Recieved), null);
+            }
+            //}
         }
 
         private void ParseData(byte[] data, int numReceived)
@@ -180,17 +207,8 @@ namespace Packet_Sniffer
                         Source = ipPacket.SourceAddress.ToString(),
                         Destination = ipPacket.DestinationAddress.ToString(),
                         Protocol = ipPacket.Protocol,
-                        Length = ipPacket.TotalLength//,
+                        Length = ipPacket.TotalLength
                     };
-                    //item.SubItems.Add(DateTime.Now.ToString("HH:mm:ss:") + DateTime.Now.Millisecond.ToString());
-                    //item.SubItems.Add(ipPacket.SourceAddress.ToString());
-                    //item.SubItems.Add(tcpPacket.SourcePort);
-                    //item.SubItems.Add(ipPacket.DestinationAddress.ToString());
-                    //item.SubItems.Add(tcpPacket.DestinationPort);
-                    //item.SubItems.Add(ipPacket.Protocol);
-                    //item.SubItems.Add(ipPacket.TotalLength);
-                    //item.SubItems.Add(strKey);
-                    //dataGrid.Items.Add(new PacketData { Number = "1", Time_Stamp = "10:00", Source = "Me", Destination = "Me" });
 
                     if (pkgBuffer.Count < maxBufferSize)
                     {
@@ -268,18 +286,13 @@ namespace Packet_Sniffer
                     treeView.Items.Add(IPnode);
                 }
 
-
+                Show_Bytes(pkgInfo);
             }
         }
 
         public void Show_Bytes(PacketInfo pkgInfo)
         {
-            MemberInfo[] IPmembers = typeof(PacketIP).GetMembers();
-
-            foreach(MemberInfo member in IPmembers)
-            {
-                textBlock.Text = pkgInfo.GetType().GetMember(member.Name).ToString();
-            }
+            textBlock.Text += Convert.ToChar(pkgInfo.IP._bVersionAndHeader);
         }
     }
 }
