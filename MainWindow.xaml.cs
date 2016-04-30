@@ -292,7 +292,8 @@ namespace Packet_Sniffer
 
         public void Show_Bytes(PacketInfo pkgInfo)
         {
-            textBlock.Text += Convert.ToChar(pkgInfo.IP._bVersionAndHeader);
+            textBlock.Text += pkgInfo.IP._bVersionAndHeader.ToString("X");
+            textBlock.Text += pkgInfo.IP._bTypeOfService.ToString("X");
         }
     }
 }

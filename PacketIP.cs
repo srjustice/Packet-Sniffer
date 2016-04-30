@@ -37,7 +37,7 @@ namespace Packet_Sniffer
                     memoryStream = new MemoryStream(bBuffer, 0, iReceived);
                     binaryReader = new BinaryReader(memoryStream);
 
-                    // first 8 bits contains version(4 bits) ,and (4 bits) internet header lenght (IHL this point to the beginning of the data)
+                    // first 8 bits contains version(4 bits) ,and (4 bits) internet header length (IHL this point to the beginning of the data)
                     _bVersionAndHeader = binaryReader.ReadByte();
 
                     //8 bits which indicates the quality of service
