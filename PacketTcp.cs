@@ -19,18 +19,18 @@ namespace Packet_Sniffer
         /// 
         /// </summary>
         /// 
-        private ushort _usSourcePort;         //16 bits for source port         
-        private ushort _usDestinationPort;    //16 bits for destination port   
-        private uint   _uiSequenceNumber;     //32 bits for sequence number   
-        private uint   _uiAckNumber;          //32 bits for acknowledgement number
-        private ushort _usDataOffsetAndFlags; //16 bits for data offset and flags  
-        private ushort _usWindow;             //16 bits for window size   
-        private short  _sChecksum;            //16 bits for checksum
-                                                    
-        private ushort _usUrgentPointer;      //16 bits for urgent pointer    
+        public ushort _usSourcePort { get; set; }          //16 bits for source port         
+        public ushort _usDestinationPort { get; set; }     //16 bits for destination port   
+        public uint   _uiSequenceNumber { get; set; }      //32 bits for sequence number   
+        public uint   _uiAckNumber { get; set; }           //32 bits for acknowledgement number
+        public ushort _usDataOffsetAndFlags { get; set; }  //16 bits for data offset and flags  
+        public ushort _usWindow { get; set; }              //16 bits for window size   
+        public short  _sChecksum { get; set; }             //16 bits for checksum
 
-        private byte   _bHeaderLength;              //8 bits for TCP header lenght   
-        private ushort _usMessageLength;            // data lenght carried by TCP packet    
+        public ushort _usUrgentPointer { get; set; }       //16 bits for urgent pointer    
+
+        public byte   _bHeaderLength { get; set; }               //8 bits for TCP header length   
+        public ushort _usMessageLength { get; set; }             // data length carried by TCP packet    
         private byte[] _bTCPData = new byte[4096];  // buffer for data carried by TCP packet
        
         public PacketTcp(byte [] bBuffer, int iReceived)
@@ -69,14 +69,14 @@ namespace Packet_Sniffer
                     //16 bits for urgentpoint
                     _usUrgentPointer = (ushort)IPAddress.NetworkToHostOrder(binaryReader.ReadInt16());
 
-                    // counting lenght of TCP header
+                    // counting length of TCP header
                     _bHeaderLength = (byte)(_usDataOffsetAndFlags >> 12);
                     _bHeaderLength *= 4;
 
-                    // counting lenght of data carried by TCP packet
+                    // counting length of data carried by TCP packet
                     _usMessageLength = (ushort)(iReceived - _bHeaderLength);
 
-                    //copyong data carried by TCP packet in to buffer
+                    //copying data carried by TCP packet in to buffer
                     Array.Copy(bBuffer, _bHeaderLength, _bTCPData, 0, iReceived - _bHeaderLength);
                 }
                 catch (Exception) { }

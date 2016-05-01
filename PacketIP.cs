@@ -11,7 +11,7 @@ namespace Packet_Sniffer
     {
         public byte      _bVersionAndHeader { get; set; }      //8 bits for version and header (4 bits version + 4bits header)
         public byte      _bTypeOfService { get; set; }         //8 bits for type of service (TOS)(indicates the quality of service)
-        public ushort    _usTotalLenght { get; set; }          //16 bits for total lenght of datagram    
+        public ushort    _usTotalLength { get; set; }          //16 bits for total lenght of datagram    
         public ushort    _usIdentification { get; set; }       //16 bits for identification ( this value assigned by the sender)    
         public ushort    _usFlagsAndOffset { get; set; }       //16 bits for flags and Fragment offset   
         public byte      _bTTL { get; set; }                   //8 bits for timto live(TTL) 
@@ -44,7 +44,7 @@ namespace Packet_Sniffer
                     _bTypeOfService = binaryReader.ReadByte();
 
                     //16 bits for lenght of the datagram in bytes ( the lenght may be up to 65535 bytes)
-                    _usTotalLenght = (ushort)IPAddress.NetworkToHostOrder(binaryReader.ReadInt16());
+                    _usTotalLength = (ushort)IPAddress.NetworkToHostOrder(binaryReader.ReadInt16());
 
                     //16 bits for identification 
                     _usIdentification = (ushort)IPAddress.NetworkToHostOrder(binaryReader.ReadInt16());
@@ -77,7 +77,7 @@ namespace Packet_Sniffer
                     _bHeaderLength *= 4;
 
                     //copying data carried by IP packet in to a buffer
-                    Array.Copy(bBuffer, _bHeaderLength, byIPData, 0, _usTotalLenght - _bHeaderLength);
+                    Array.Copy(bBuffer, _bHeaderLength, byIPData, 0, _usTotalLength - _bHeaderLength);
                 }
                 finally
                 {
@@ -115,7 +115,7 @@ namespace Packet_Sniffer
 
         public ushort MessageLength
         {
-            get{return (ushort)(_usTotalLenght - _bHeaderLength);}
+            get{return (ushort)(_usTotalLength - _bHeaderLength);}
         }
 
         public string TypeOfService
@@ -196,7 +196,7 @@ namespace Packet_Sniffer
 
         public string TotalLength
         {
-            get{return _usTotalLenght.ToString(); }
+            get{return _usTotalLength.ToString(); }
         }
 
         public string Identification

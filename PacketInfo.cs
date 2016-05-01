@@ -11,8 +11,10 @@ namespace Packet_Sniffer
     /// </summary>
     public class PacketInfo
     {
-        PacketIP   _ip;     // IP packet information
-        PacketTcp  _tcp;    // TCP header information
+        private PacketIP   _ip;     // IP packet information
+        private PacketTcp  _tcp;    // TCP header information
+        public string packetHex { get; set; }   //Packet data in hex
+        public string packetAscii { get; set; }  //Packet data in Ascii
 
         /// <summary>
         /// 
@@ -29,10 +31,12 @@ namespace Packet_Sniffer
         {
             _ip = ip;
         }
-        public PacketInfo(PacketIP ip, PacketTcp tcp)
+        public PacketInfo(PacketIP ip, PacketTcp tcp, string hex, string ascii)
         {
             _ip = ip;
             _tcp = tcp;
+            packetHex = hex;
+            packetAscii = ascii;
         }
 
         public PacketIP IP

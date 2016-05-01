@@ -4,14 +4,15 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:Packet_Sniffer"
-        mc:Ignorable="d" ResizeMode="NoResize" UseLayoutRounding="False" Width="700" Height="540">
+        mc:Ignorable="d" ResizeMode="NoResize" UseLayoutRounding="False" Width="700" Height="640">
     <Grid x:Name="grid" Margin="0" HorizontalAlignment="Center">
         <Grid.RowDefinitions>
-            <RowDefinition Height="0.55*"/>
-            <RowDefinition Height="0.35*"/>
-            <RowDefinition Height="0.1*"/>
+            <RowDefinition Height="0.08*"/>
+            <RowDefinition Height="0.44*"/>
+            <RowDefinition Height="0.4*"/>
+            <RowDefinition Height="0.08*"/>
         </Grid.RowDefinitions>
-        <DataGrid x:Name="dataGrid" CanUserResizeRows="False" HeadersVisibility="Column" CanUserReorderColumns="False" CanUserResizeColumns="False" CanUserSortColumns="False" SelectionMode="Single" SelectionChanged="createPacketTree" IsReadOnly="True" HorizontalAlignment="Center" Margin="10,0">
+        <DataGrid x:Name="dataGrid" CanUserResizeRows="False" HeadersVisibility="Column" CanUserReorderColumns="False" CanUserResizeColumns="False" CanUserSortColumns="False" SelectionMode="Single" SelectionChanged="createPacketTree" IsReadOnly="True" HorizontalAlignment="Center" Margin="10,0" Grid.Row="1">
             <DataGrid.CellStyle>
                 <Style TargetType="DataGridCell">
                     <Setter Property="BorderThickness" Value="0"/>
@@ -28,18 +29,41 @@
                 <DataGridTextColumn x:Name="Info" Header="Info" CanUserResize="False" Width="0.33*" Binding="{Binding Info}"/>
             </DataGrid.Columns>
         </DataGrid>
-        <Grid Grid.Row="1">
+        <Grid Grid.Row="2">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="0.5*"/>
                 <ColumnDefinition Width="0.5*"/>
             </Grid.ColumnDefinitions>
-            <TreeView x:Name="treeView" BorderBrush="Black" BorderThickness="1" Margin="10"/>
-            <Border BorderBrush="Black" BorderThickness="1" Margin="10" Padding="5" Grid.Column="1">
-                <TextBlock x:Name="textBlock" Margin="0" TextWrapping="Wrap"/>
+            <TreeView x:Name="treeView" BorderBrush="Black" BorderThickness="1" Margin="10,35,5,35">
+                <TreeView.ItemContainerStyle>
+                    <Style TargetType="{x:Type TreeViewItem}">
+                        <Setter Property="IsExpanded" Value="True"/>
+                    </Style>
+                </TreeView.ItemContainerStyle>
+                <TreeView.Background>
+                    <SolidColorBrush Color="{DynamicResource {x:Static SystemColors.ControlColorKey}}"/>
+                </TreeView.Background>
+            </TreeView>
+            <Border BorderBrush="Black" BorderThickness="1" Margin="5,35,10,35" Padding="0" Grid.Column="1">
+                <Border.Background>
+                    <SolidColorBrush Color="{DynamicResource {x:Static SystemColors.ControlColorKey}}"/>
+                </Border.Background>
+                <ScrollViewer Grid.Column="1" VerticalScrollBarVisibility="Auto" Padding="5">
+                    <TextBlock x:Name="textBlock" Margin="0" TextWrapping="Wrap" ScrollViewer.CanContentScroll="True" />
+                </ScrollViewer>
             </Border>
+            <Label x:Name="packetDetailsLabel" Content="Packet Tree" HorizontalAlignment="Center" Margin="0,209,0,0" VerticalAlignment="Top"/>
+            <Label x:Name="asciiHexLabel" Content="Show Bytes:" Grid.Column="1" HorizontalAlignment="Left" Margin="46,209,0,0" VerticalAlignment="Top"/>
+            <Label x:Name="detailsSectionLabel" Content="Detailed Packet Information" HorizontalAlignment="Center" Margin="0,5,0,0" VerticalAlignment="Top" Grid.ColumnSpan="2"/>
+            <RadioButton x:Name="asciiButton" Content="Ascii" Grid.Column="1" HorizontalAlignment="Left" Margin="158,215,0,0" VerticalAlignment="Top" IsChecked="True" Checked="asciiButton_Checked"/>
+            <RadioButton x:Name="hexButton" Content="Hex" Grid.Column="1" HorizontalAlignment="Left" Margin="238,215,0,0" VerticalAlignment="Top" Checked="hexButton_Checked"/>
         </Grid>
-        <Label x:Name="interfaceLabel" Content="Choose Interface:" HorizontalAlignment="Left" Margin="280,9,0,0" VerticalAlignment="Top" Height="24" Width="105" Grid.Row="2"/>
-        <ComboBox x:Name="interfaceSelector" HorizontalAlignment="Left" Margin="385,0,0,0" Width="268" Height="22" Grid.Row="2" />
-        <Button x:Name="Start_Button" Content="Start" Click="Start_Button_Click" Margin="48,0,0,0" Width="78" Height="22" Grid.Row="2" HorizontalAlignment="Left"/>
+        <Label x:Name="interfaceLabel" Content="Choose Interface:" Margin="278,10,0,13" VerticalAlignment="Center" Height="24" Grid.Row="3" HorizontalAlignment="Left"/>
+        <ComboBox x:Name="interfaceSelector" HorizontalAlignment="Left" Margin="385,12,0,13" Width="268" Height="22" Grid.Row="3" />
+        <Button x:Name="Start_Button" Content="Start" Click="Start_Button_Click" Margin="48,12,0,13" Width="78" Height="22" Grid.Row="3" HorizontalAlignment="Left"/>
+        <TextBox x:Name="maxBufferText" Height="23" Margin="119,0,0,0" Text="1000" Width="48" HorizontalAlignment="Left" VerticalAlignment="Center" TextAlignment="Center" MaxLines="1" MaxLength="5" IsUndoEnabled="True" Padding="0" TextChanged="maxBufferText_TextChanged"/>
+        <ProgressBar x:Name="bufferProgress" HorizontalAlignment="Left" Height="23" Margin="330,10,0,0" VerticalAlignment="Top" Width="343" Maximum="{Binding maxBufferSize}"/>
+        <Label x:Name="maxBufferLabel" Content="Buffer Size:" HorizontalAlignment="Left" Margin="36,9,0,14" VerticalAlignment="Center"/>
+        <Label x:Name="maxBufferLabel_Copy" Content="Buffer Fill:" HorizontalAlignment="Left" Margin="238,10,0,13" VerticalAlignment="Center" Width="67"/>
     </Grid>
 </Window>
