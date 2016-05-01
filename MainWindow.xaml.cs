@@ -32,13 +32,15 @@ namespace Packet_Sniffer
         private byte[] byteData = new byte[4096];
         Thread captureThread;
         Dictionary<string, PacketInfo> pkgBuffer = new Dictionary<string, PacketInfo>();
-        int maxBufferSize = 1000;
+        int maxBufferSize;
         bool showAscii = true;      //true for Ascii, false for Hex
+
 
         public MainWindow()
         {
             InitializeComponent();
             Load_Interfaces();
+            Set_Icon();
         }
 
         private void Start_Button_Click(object sender, RoutedEventArgs e)
@@ -54,6 +56,7 @@ namespace Packet_Sniffer
                 try
                 {
                     Start_Button.Content = "Stop";
+                    Start_Button.Background = Brushes.Red;
 
                     isCapturing = true;
 
@@ -98,7 +101,9 @@ namespace Packet_Sniffer
             else
             {
                 isCapturing = false;
+
                 Start_Button.Content = "Start";
+                Start_Button.Background = Brushes.LimeGreen;
 
                 if (captureThread.IsAlive)
                     captureThread.Abort();
@@ -204,7 +209,8 @@ namespace Packet_Sniffer
                         Dispatcher.Invoke((() =>
                         {
                             dataGrid.Items.Add(packet);
-                            bufferProgress.Value = (double)numPacketsReceived;
+                            bufferProgress.Value = (double) numPacketsReceived;
+                            percentLabel.Content = (Math.Round(((double)numPacketsReceived / (double) maxBufferSize), 2) * 100).ToString() + "%";
                         }), DispatcherPriority.ContextIdle);
                     }
                 }
@@ -220,6 +226,12 @@ namespace Packet_Sniffer
             {
                 interfaceSelector.Items.Add(ip.ToString());
             }
+        }
+
+        private void Set_Icon()
+        {
+            Uri iconUri = new Uri(@"C:\Users\SamJustice\Documents\Visual Studio 2015\Projects\Packet Sniffer\nose.png", UriKind.RelativeOrAbsolute);
+            window.Icon = BitmapFrame.Create(iconUri);
         }
 
         private void createPacketTree(object sender, SelectionChangedEventArgs e)
@@ -302,13 +314,13 @@ namespace Packet_Sniffer
                 textBlock.Inlines.Add(new Run("IP:") { FontSize = 16, Foreground = Brushes.Green, TextDecorations = TextDecorations.Underline });
                 textBlock.Inlines.Add(new Run("\n\n"));
 
-                textBlock.Inlines.Add(new Run(pkgInfo.packetHex.Substring(0, pkgInfo.IP._bHeaderLength)));
+                textBlock.Inlines.Add(new Run(pkgInfo.packetHex.Substring(0, pkgInfo.IP._bHeaderLength * 2)));
 
                 textBlock.Inlines.Add(new Run("\n\n"));
                 textBlock.Inlines.Add(new Run("TCP:") { FontSize = 16, Foreground = Brushes.Blue, TextDecorations = TextDecorations.Underline });
                 textBlock.Inlines.Add(new Run("\n\n"));
 
-                textBlock.Inlines.Add(new Run(pkgInfo.packetHex.Substring(pkgInfo.IP._bHeaderLength, pkgInfo.IP._usTotalLength - pkgInfo.IP._bHeaderLength)));
+                textBlock.Inlines.Add(new Run(pkgInfo.packetHex.Substring(pkgInfo.IP._bHeaderLength * 2, (pkgInfo.IP._usTotalLength - pkgInfo.IP._bHeaderLength) * 2)));
             }
 
             /*textBlock.Inlines.Add(new Run(pkgInfo.IP._bVersionAndHeader.ToString("X")));
@@ -402,21 +414,43 @@ namespace Packet_Sniffer
                         textBlock.Inlines.Add(new Run("IP:") { FontSize = 16, Foreground = Brushes.Green, TextDecorations = TextDecorations.Underline });
                         textBlock.Inlines.Add(new Run("\n\n"));
 
-                        textBlock.Inlines.Add(new Run(pkgInfo.packetHex.Substring(0, pkgInfo.IP._bHeaderLength)));
+                        textBlock.Inlines.Add(new Run(pkgInfo.packetHex.Substring(0, pkgInfo.IP._bHeaderLength * 2)));
 
                         textBlock.Inlines.Add(new Run("\n\n"));
                         textBlock.Inlines.Add(new Run("TCP:") { FontSize = 16, Foreground = Brushes.Blue, TextDecorations = TextDecorations.Underline });
                         textBlock.Inlines.Add(new Run("\n\n"));
 
-                        textBlock.Inlines.Add(new Run(pkgInfo.packetHex.Substring(pkgInfo.IP._bHeaderLength, pkgInfo.IP._usTotalLength - pkgInfo.IP._bHeaderLength)));
+                        textBlock.Inlines.Add(new Run(pkgInfo.packetHex.Substring(pkgInfo.IP._bHeaderLength * 2, (pkgInfo.IP._usTotalLength - pkgInfo.IP._bHeaderLength) * 2)));
                     }
                 }
             }
         }
 
-        private void maxBufferText_TextChanged(object sender, TextChangedEventArgs e)
+        private void maxBufferText_TextLoaded(object sender, TextChangedEventArgs e)
         {
-            maxBufferSize = Int32.Parse(maxBufferText.Text);
+            if (bufferProgress == null && Double.Parse(maxBufferText.Text) > 10)
+            {
+                maxBufferSize = Int32.Parse(maxBufferText.Text);
+            }
+        }
+
+        private void maxBufferText_TextChanged(object sender, KeyEventArgs e)
+        {
+            if (e.Key == Key.Return)
+            {
+                if (bufferProgress != null && Double.Parse(maxBufferText.Text) > 10)
+                {
+                    bufferProgress.Maximum = Double.Parse(maxBufferText.Text);
+                    maxBufferSize = Int32.Parse(maxBufferText.Text);
+                }
+                else if (bufferProgress != null && Double.Parse(maxBufferText.Text) < 10)
+                {
+                    MessageBox.Show("Buffer size cannot be less than 10. The buffer size was set to ten.", "Packet Sniffer", MessageBoxButton.OK, MessageBoxImage.Error);
+                    maxBufferText.Text = "10";
+                    bufferProgress.Maximum = 10.0;
+                    maxBufferSize = 10;
+                }
+            }
         }
     }
 }
