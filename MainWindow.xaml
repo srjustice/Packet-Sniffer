@@ -60,11 +60,12 @@
         </Grid>
         <Label x:Name="interfaceLabel" Content="Choose Interface:" Margin="259,0,0,0" VerticalAlignment="Center" Height="24" Grid.Row="0" HorizontalAlignment="Left"/>
         <ComboBox x:Name="interfaceSelector" HorizontalAlignment="Left" Margin="379,0,0,0" Width="268" Height="22" Grid.Row="0" VerticalAlignment="Center" />
-        <Button x:Name="Start_Button" Content="Start" Click="Start_Button_Click" Margin="48,0,0,0" Width="78" Height="22" HorizontalAlignment="Left" Background="LimeGreen" Grid.Row="0" VerticalAlignment="Center"/>
+        <Button x:Name="Start_Button" Content="Start" Click="Start_Button_Click" Margin="37,0,0,0" Width="78" Height="22" HorizontalAlignment="Left" Background="LimeGreen" Grid.Row="0" VerticalAlignment="Center"/>
         <TextBox x:Name="maxBufferText" Height="19" Margin="112,0,0,0" Text="1000" Width="48" HorizontalAlignment="Left" VerticalAlignment="Center" TextAlignment="Center" MaxLines="1" MaxLength="5" IsUndoEnabled="True" Padding="0" Grid.Row="3" KeyDown="maxBufferText_TextChanged" TextChanged="maxBufferText_TextLoaded"/>
         <ProgressBar x:Name="bufferProgress" HorizontalAlignment="Left" Height="23" Margin="273,0,0,0" VerticalAlignment="Center" Width="352" Maximum="1000" Minimum="10" Grid.Row="3" />
         <Label x:Name="maxBufferLabel" Content="Buffer Size:" HorizontalAlignment="Left" Margin="17,12,0,11" VerticalAlignment="Center" Grid.Row="3"/>
         <Label x:Name="maxBufferLabel_Copy" Content="Buffer Fill:" HorizontalAlignment="Left" Margin="190,0,0,0" VerticalAlignment="Center" Width="67" Grid.Row="3"/>
         <Label x:Name="percentLabel" HorizontalAlignment="Left" Margin="639,12,0,11" VerticalAlignment="Center" Content="0%" Grid.Row="3"/>
+        <Button x:Name="bufferClearButton" Content="Clear Buffer" HorizontalAlignment="Left" Margin="151,0,0,0" VerticalAlignment="Center" Width="75" Height="22" Click="bufferClearButton_Click"/>
     </Grid>
 </Window>

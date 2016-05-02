@@ -26,7 +26,7 @@ namespace Packet_Sniffer
     /// </summary>
     public partial class MainWindow : Window
     {
-        private decimal numPacketsReceived;
+        private decimal numPacketsReceived = 0;
         private bool isCapturing;
         private Socket internetSocket;
         private byte[] byteData = new byte[4096];
@@ -59,8 +59,6 @@ namespace Packet_Sniffer
                     Start_Button.Background = Brushes.Red;
 
                     isCapturing = true;
-
-                    numPacketsReceived = 0;
 
                     //For sniffing the socket to capture the packets has to be a raw socket, with the
                     //address family being of type internetwork, and protocol being IP
@@ -210,7 +208,7 @@ namespace Packet_Sniffer
                         {
                             dataGrid.Items.Add(packet);
                             bufferProgress.Value = (double) numPacketsReceived;
-                            percentLabel.Content = (Math.Round(((double)numPacketsReceived / (double) maxBufferSize), 2) * 100).ToString() + "%";
+                            percentLabel.Content = (Math.Round(((double) numPacketsReceived / (double) maxBufferSize), 2) * 100).ToString() + "%";
                         }), DispatcherPriority.ContextIdle);
                     }
                 }
@@ -442,6 +440,7 @@ namespace Packet_Sniffer
                 {
                     bufferProgress.Maximum = Double.Parse(maxBufferText.Text);
                     maxBufferSize = Int32.Parse(maxBufferText.Text);
+                    percentLabel.Content = (Math.Round(((double) numPacketsReceived / (double) maxBufferSize), 2) * 100).ToString() + "%";
                 }
                 else if (bufferProgress != null && Double.Parse(maxBufferText.Text) < 10)
                 {
@@ -449,8 +448,18 @@ namespace Packet_Sniffer
                     maxBufferText.Text = "10";
                     bufferProgress.Maximum = 10.0;
                     maxBufferSize = 10;
+                    percentLabel.Content = (Math.Round(((double)numPacketsReceived / (double)maxBufferSize), 2) * 100).ToString() + "%";
                 }
             }
+        }
+
+        private void bufferClearButton_Click(object sender, RoutedEventArgs e)
+        {
+            dataGrid.Items.Clear();
+            pkgBuffer.Clear();
+            bufferProgress.Value = 0;
+            numPacketsReceived = 0;
+            percentLabel.Content = "0%";
         }
     }
 }
