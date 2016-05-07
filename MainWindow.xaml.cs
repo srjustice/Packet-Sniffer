@@ -19,21 +19,29 @@ using System.Windows.Navigation;
 using System.Windows.Shapes;
 using System.Windows.Threading;
 
+/*
+ * The classes "PacketInfo", "PacketIP", and "PacketTCP" were obtained from a project posted on coderbag.com, which is the
+ * personal website of Sergej Kuznecov. On his website, he states that he posted the classes so that "everyone can use 
+ * them in any way they want". 
+ * 
+ * The webpage where I obtained Kuznecov's code is located at http://www.coderbag.com/Programming-C/Building-a-Network-Sniffer-in-NET.
+ * 
+ * The rest of the code was written by me.
+ */
+
 namespace Packet_Sniffer
 {
-    /// <summary>
-    /// Interaction logic for MainWindow.xaml
-    /// </summary>
     public partial class MainWindow : Window
     {
-        private decimal numPacketsReceived = 0;
+        private int numPacketsReceived = 0;
         private bool isCapturing;
+        private bool isSocketConnected;
         private Socket internetSocket;
         private byte[] byteData = new byte[4096];
-        Thread captureThread;
-        Dictionary<string, PacketInfo> pkgBuffer = new Dictionary<string, PacketInfo>();
-        int maxBufferSize;
-        bool showAscii = true;      //true for Ascii, false for Hex
+        private Thread captureThread;
+        private Dictionary<string, PacketInfo> pkgBuffer = new Dictionary<string, PacketInfo>();
+        private int maxBufferSize = 1000;
+        private bool showAscii = true;      //true for Ascii, false for Hex
 
 
         public MainWindow()
@@ -53,66 +61,58 @@ namespace Packet_Sniffer
             }
             else if (!isCapturing)
             {
-                try
+                if (pkgBuffer.Count < maxBufferSize)
                 {
-                    Start_Button.Content = "Stop";
-                    Start_Button.Background = Brushes.Red;
+                    try
+                    {
+                        Start_Button.Content = "Stop";
+                        Start_Button.Background = Brushes.Red;
 
-                    isCapturing = true;
+                        isCapturing = true;
 
-                    //For sniffing the socket to capture the packets has to be a raw socket, with the
-                    //address family being of type internetwork, and protocol being IP
-                    internetSocket = new Socket(AddressFamily.InterNetwork, SocketType.Raw, ProtocolType.IP);
+                        //Create a socket with the address family "internetwork" and protocol "IP"
+                        internetSocket = new Socket(AddressFamily.InterNetwork, SocketType.Raw, ProtocolType.IP);
 
-                    //Bind the socket to the selected IP address
-                    internetSocket.Bind(new IPEndPoint(IPAddress.Parse(interfaceSelector.SelectedItem.ToString()), 0));
+                        //Bind the socket to the IP address the user selected
+                        internetSocket.Bind(new IPEndPoint(IPAddress.Parse(interfaceSelector.SelectedItem.ToString()), 0));
 
-                    //Set the socket  options
-                    internetSocket.SetSocketOption(SocketOptionLevel.IP,            //Applies only to IP packets
-                                               SocketOptionName.HeaderIncluded, //Set the include the header
-                                               true);                           //option to true
+                        //Configure the socket options
+                        internetSocket.SetSocketOption(SocketOptionLevel.IP,           
+                                                   SocketOptionName.HeaderIncluded,     
+                                                   true);                               
 
-                    byte[] byIn = new byte[4] { 1, 0, 0, 0 };
-                    byte[] byOut = new byte[4] { 1, 0, 0, 0 }; //Capture outgoing packets
+                        byte[] byIn = new byte[4] { 1, 0, 0, 0 };
+                        byte[] byOut = new byte[4] { 1, 0, 0, 0 };
 
-                    //Socket.IOControl is analogous to the WSAIoctl method of Winsock 2
-                    internetSocket.IOControl(IOControlCode.ReceiveAll,              //Equivalent to SIO_RCVALL constant
-                                                                                    //of Winsock 2
-                                         byIn,
-                                         byOut);
+                        internetSocket.IOControl(IOControlCode.ReceiveAll, byIn, byOut);
 
-                    //Start receiving the packets asynchronously
-                    //internetSocket.BeginReceive(byteData, 0, byteData.Length, SocketFlags.None,
-                    //new AsyncCallback(Packet_Recieved), null);
+                        //The socket is connected
+                        isSocketConnected = true;
 
-                    //Capture using a thread
-                    captureThread = new Thread(Packet_Recieved);
-                    captureThread.Name = "Capture Thread";
-                    captureThread.Start();
+                        //Create the thread used to capture packets
+                        captureThread = new Thread(Packet_Recieved);
+                        captureThread.Name = "Capture Thread";
+                        captureThread.Start();
 
+                    }
+                    catch (Exception ex)
+                    {
+                        MessageBox.Show(ex.Message, "Packet Sniffer", MessageBoxButton.OK, MessageBoxImage.Error);
+                    }
                 }
-                catch (Exception ex)
+                else
                 {
-                    MessageBox.Show(ex.Message, "Packet Sniffer", MessageBoxButton.OK, MessageBoxImage.Error);
+                    MessageBox.Show("The packet buffer has reached its maximum capacity. Clear the buffer or increase the maximum buffer size in order to continue.",
+                            "Packet Sniffer", MessageBoxButton.OK, MessageBoxImage.Warning);
                 }
             }
             else
             {
-                isCapturing = false;
-
-                Start_Button.Content = "Start";
-                Start_Button.Background = Brushes.LimeGreen;
-
-                if (captureThread.IsAlive)
-                    captureThread.Abort();
-
-                //To stop capturing the packets close the socket
-                internetSocket.Shutdown(SocketShutdown.Both);
-                internetSocket.Close();
+                Stop_Capturing();
             }
         }
 
-        private void Packet_Recieved()//IAsyncResult receivedPacket)
+        private void Packet_Recieved()
         {
 
             while (isCapturing)
@@ -121,7 +121,7 @@ namespace Packet_Sniffer
                 {
                     int bytesReceived = internetSocket.Receive(byteData, 0, byteData.Length, SocketFlags.None);
 
-                    //Analyze the bytes received...
+                    //Analyze the bytes that have been received
                     if (bytesReceived > 0)
                     {
                         ParseData(byteData, bytesReceived);
@@ -129,37 +129,13 @@ namespace Packet_Sniffer
 
                     Array.Clear(byteData, 0, byteData.Length);
                 }
-
-                /* try
-                 {
-                     int bytesReceived = internetSocket.EndReceive(receivedPacket);
-
-                     //Analyze the bytes received...
-                     if (bytesReceived > 0)
-                     {
-                         ParseData(byteData, bytesReceived);
-                     }
-
-                     if (isCapturing)
-                     {
-                         Array.Clear(byteData, 0, byteData.Length);
-
-                         internetSocket.BeginReceive(byteData, 0, byteData.Length, SocketFlags.None,
-                              new AsyncCallback(Packet_Recieved), null);
-                     }
-                 }*/
                 catch (ObjectDisposedException ex)
                 {
-                    Console.WriteLine(ex.Message);
+                    Console.WriteLine(ex.Message + "\r\n");
                 }
                 catch (Exception ex)
                 {
-                    //MessageBox.Show(ex.Message, "Packet Sniffer", MessageBoxButton.OK, MessageBoxImage.Error);
-
                     Console.Write(ex.Message + "\r\n");
-
-                    //internetSocket.BeginReceive(byteData, 0, byteData.Length, SocketFlags.None,
-                    //new AsyncCallback(Packet_Recieved), null);
                 }
             }
         }
@@ -171,38 +147,41 @@ namespace Packet_Sniffer
 
             if (data.Length > 0 && numReceived != 0)
             {
-                //getting IP header and data information
+                //Parse the IP packet
                 PacketIP ipPacket = new PacketIP(data, numReceived);
 
                 if (ipPacket.Protocol == "TCP")
                 {
-                    numPacketsReceived++;
+                    //Make the key of the packet equal to the number of packets that have been received thus far
+                    string strKey = (numPacketsReceived + 1).ToString();
 
-                    // this string used as a key in the buffer
-                    string strKey = numPacketsReceived.ToString();
-
+                    //Parse the TCP packet
                     PacketTcp tcpPacket = new PacketTcp(ipPacket.Data, ipPacket.MessageLength);
 
+                    //Convert the packet's bytes to Hex and ASCII
                     packetHex = BitConverter.ToString(byteData).Replace("-", String.Empty).Substring(0, numReceived * 2);
                     packetAscii = Encoding.ASCII.GetString(byteData).Substring(0, numReceived);
 
-                    //creating new PacketInfo object to fill the buffer
+                    //Create a PacketInfo object to store in the dictionary
                     PacketInfo pkgInfo = new PacketInfo(ipPacket, tcpPacket, packetHex, packetAscii);
 
-                    //creating new list item to fill the list view control
+                    //Create a PacketData object to populate the datagrid
                     PacketData packet = new PacketData
                     {
-                        Number = numPacketsReceived.ToString(),
+                        Number = (numPacketsReceived + 1).ToString(),
                         Time_Stamp = DateTime.Now.ToString("HH:mm:ss:") + DateTime.Now.Millisecond.ToString(),
-                        Source = ipPacket.SourceAddress.ToString(),
-                        Destination = ipPacket.DestinationAddress.ToString(),
+                        Source = ipPacket.SourceAddress.ToString() + ":" + tcpPacket.SourcePort,
+                        Destination = ipPacket.DestinationAddress.ToString() + ":" + tcpPacket.DestinationPort,
                         Protocol = ipPacket.Protocol,
-                        Length = ipPacket.TotalLength
+                        Length = ipPacket.TotalLength,
+                        Info = tcpPacket.Flags
                     };
 
+                    //If the buffer is not full, add the packet to the buffer and display it in the datagrid
                     if (pkgBuffer.Count < maxBufferSize)
                     {
                         pkgBuffer.Add(strKey, pkgInfo);
+                        numPacketsReceived++;
 
                         Dispatcher.Invoke((() =>
                         {
@@ -211,12 +190,23 @@ namespace Packet_Sniffer
                             percentLabel.Content = (Math.Round(((double) numPacketsReceived / (double) maxBufferSize), 2) * 100).ToString() + "%";
                         }), DispatcherPriority.ContextIdle);
                     }
+                    else
+                    {
+                        MessageBox.Show("The packet buffer has reached its maximum capacity. Clear the buffer or increase the maximum buffer size in order to continue.", 
+                            "Packet Sniffer", MessageBoxButton.OK, MessageBoxImage.Warning);
+
+                        Dispatcher.Invoke((() =>
+                        {
+                            Stop_Capturing();
+                        }), DispatcherPriority.ContextIdle);
+                    }
                 }
             }
         }
 
         private void Load_Interfaces()
         {
+            //List the available interfaces in the drop down menu
             string hostName = Dns.GetHostName();
             IPAddress[] IPs = Dns.GetHostAddresses(hostName);
 
@@ -226,70 +216,101 @@ namespace Packet_Sniffer
             }
         }
 
-        private void Set_Icon()
+        //Clear the buffer and the data listed in the datagrid
+        private void bufferClearButton_Click(object sender, RoutedEventArgs e)
         {
-            Uri iconUri = new Uri(@"C:\Users\SamJustice\Documents\Visual Studio 2015\Projects\Packet Sniffer\nose.png", UriKind.RelativeOrAbsolute);
-            window.Icon = BitmapFrame.Create(iconUri);
+            dataGrid.Items.Clear();
+            treeView.Items.Clear();
+            textBlock.Inlines.Clear();
+            pkgBuffer.Clear();
+            bufferProgress.Value = 0;
+            numPacketsReceived = 0;
+            percentLabel.Content = "0%";
+        }
+
+        //Stop capturing packets
+        private void Stop_Capturing()
+        {
+            isCapturing = false;
+
+            Start_Button.Content = "Start";
+            Start_Button.Background = Brushes.LimeGreen;
+
+            if (captureThread.IsAlive)
+                captureThread.Abort();
+
+            //To stop capturing the packets close the socket
+            if (isSocketConnected == true)
+            {
+                internetSocket.Shutdown(SocketShutdown.Both);
+                internetSocket.Close();
+                isSocketConnected = false;
+            }
         }
 
         private void createPacketTree(object sender, SelectionChangedEventArgs e)
         {
-            PacketData currentPacket = (PacketData)dataGrid.SelectedItem;
+            if (dataGrid.SelectedItems.Count > 0)
+            { 
+                PacketData currentPacket = (PacketData)dataGrid.SelectedItem;
 
-            //getting the number of selected packet which is used as  an key in dictionary
-            string index = currentPacket.Number;
+                //Get the key of the packet that is currently selected in the datagrid
+                string index = currentPacket.Number;
 
-            PacketInfo pkgInfo = new PacketInfo();
+                PacketInfo pkgInfo = new PacketInfo();
 
-            //trying to get data with specified key if this data exist 
-            //creating a detailed tree
-            if (pkgBuffer.TryGetValue(index, out pkgInfo))
-            {
-                if (pkgInfo.IP.Protocol == "TCP")
+                //Get the packet from the buffer whose key is the index obtained above
+                if (pkgBuffer.TryGetValue(index, out pkgInfo))
                 {
-                    treeView.Items.Clear();
+                    //If the packet is a TCP packet, add it to the detailed tree view
+                    if (pkgInfo.IP.Protocol == "TCP")
+                    {
+                        treeView.Items.Clear();
 
-                    TreeViewItem IPnode = new TreeViewItem();
-                    IPnode.Header = "IP";
-                    IPnode.Foreground = Brushes.Green;
+                        TreeViewItem IPnode = new TreeViewItem();
+                        IPnode.Header = "IP";
+                        IPnode.Foreground = Brushes.Green;
 
-                    IPnode.Items.Add(new TreeViewItem { Header = "Protocol Version: " + pkgInfo.IP.Version });
-                    IPnode.Items.Add(new TreeViewItem { Header = "Header Length: " + pkgInfo.IP.HeaderLength });
-                    IPnode.Items.Add(new TreeViewItem { Header = "Type of Service: " + pkgInfo.IP.TypeOfService });
-                    IPnode.Items.Add(new TreeViewItem { Header = "Total Length: " + pkgInfo.IP.TotalLength });
-                    IPnode.Items.Add(new TreeViewItem { Header = "Identification No: " + pkgInfo.IP.Identification });
-                    IPnode.Items.Add(new TreeViewItem { Header = "Flags: " + pkgInfo.IP.Flags });
-                    IPnode.Items.Add(new TreeViewItem { Header = "Fragmentation Offset: " + pkgInfo.IP.FragmentationOffset });
-                    IPnode.Items.Add(new TreeViewItem { Header = "TTL: " + pkgInfo.IP.TTL });
-                    IPnode.Items.Add(new TreeViewItem { Header = "Checksum: " + pkgInfo.IP.Checksum });
-                    IPnode.Items.Add(new TreeViewItem
-                    { Header = String.Format("Source address: {0}: {1}", pkgInfo.IP.SourceAddress, pkgInfo.TCP.SourcePort) });
-                    IPnode.Items.Add(new TreeViewItem
-                    { Header = String.Format("Destination address: {0}: {1}", pkgInfo.IP.DestinationAddress, pkgInfo.TCP.DestinationPort) });
+                        IPnode.Items.Add(new TreeViewItem { Header = "Protocol Version: " + pkgInfo.IP.Version });
+                        IPnode.Items.Add(new TreeViewItem { Header = "Header Length: " + pkgInfo.IP.HeaderLength });
+                        IPnode.Items.Add(new TreeViewItem { Header = "Type of Service: " + pkgInfo.IP.TypeOfService });
+                        IPnode.Items.Add(new TreeViewItem { Header = "Total Length: " + pkgInfo.IP.TotalLength });
+                        IPnode.Items.Add(new TreeViewItem { Header = "Identification No: " + pkgInfo.IP.Identification });
+                        IPnode.Items.Add(new TreeViewItem { Header = "Flags: " + pkgInfo.IP.Flags });
+                        IPnode.Items.Add(new TreeViewItem { Header = "Fragmentation Offset: " + pkgInfo.IP.FragmentationOffset });
+                        IPnode.Items.Add(new TreeViewItem { Header = "TTL: " + pkgInfo.IP.TTL });
+                        IPnode.Items.Add(new TreeViewItem { Header = "Checksum: " + pkgInfo.IP.Checksum });
+                        IPnode.Items.Add(new TreeViewItem
+                        { Header = String.Format("Source address: {0}: {1}", pkgInfo.IP.SourceAddress, pkgInfo.TCP.SourcePort) });
+                        IPnode.Items.Add(new TreeViewItem
+                        { Header = String.Format("Destination address: {0}: {1}", pkgInfo.IP.DestinationAddress, pkgInfo.TCP.DestinationPort) });
 
-                    TreeViewItem TCPnode = new TreeViewItem();
-                    TCPnode.Header = "TCP";
-                    TCPnode.Foreground = Brushes.Blue;
+                        TreeViewItem TCPnode = new TreeViewItem();
+                        TCPnode.Header = "TCP";
+                        TCPnode.Foreground = Brushes.Blue;
 
-                    TCPnode.Items.Add(new TreeViewItem { Header = "Sequence No: " + pkgInfo.TCP.SequenceNumber });
-                    TCPnode.Items.Add(new TreeViewItem { Header = "Acknowledgement Num: " + pkgInfo.TCP.AcknowledgementNumber });
-                    TCPnode.Items.Add(new TreeViewItem { Header = "Header Length: " + pkgInfo.TCP.HeaderLength });
-                    TCPnode.Items.Add(new TreeViewItem { Header = "Flags: " + pkgInfo.TCP.Flags });
-                    TCPnode.Items.Add(new TreeViewItem { Header = "Window size: " + pkgInfo.TCP.WindowSize });
-                    TCPnode.Items.Add(new TreeViewItem { Header = "Checksum: " + pkgInfo.TCP.Checksum });
-                    TCPnode.Items.Add(new TreeViewItem { Header = "Message Length: " + pkgInfo.TCP.MessageLength });
+                        TCPnode.Items.Add(new TreeViewItem { Header = "Sequence No: " + pkgInfo.TCP.SequenceNumber });
+                        TCPnode.Items.Add(new TreeViewItem { Header = "Acknowledgement Num: " + pkgInfo.TCP.AcknowledgementNumber });
+                        TCPnode.Items.Add(new TreeViewItem { Header = "Header Length: " + pkgInfo.TCP.HeaderLength });
+                        TCPnode.Items.Add(new TreeViewItem { Header = "Flags: " + pkgInfo.TCP.Flags });
+                        TCPnode.Items.Add(new TreeViewItem { Header = "Window size: " + pkgInfo.TCP.WindowSize });
+                        TCPnode.Items.Add(new TreeViewItem { Header = "Checksum: " + pkgInfo.TCP.Checksum });
+                        TCPnode.Items.Add(new TreeViewItem { Header = "Message Length: " + pkgInfo.TCP.MessageLength });
 
-                    IPnode.Items.Add(TCPnode);
+                        IPnode.Items.Add(TCPnode);
 
-                    treeView.Items.Add(IPnode);
+                        treeView.Items.Add(IPnode);
+                    }
+
+                    //Show the raw packet data in the text box to the right of the detailed tree view
+                    Show_Bytes(pkgInfo);
                 }
-
-                Show_Bytes(pkgInfo);
             }
         }
 
         public void Show_Bytes(PacketInfo pkgInfo)
         {
+            //Display the raw packet data as ASCII characters
             if (showAscii == true)
             {
                 textBlock.Inlines.Clear();
@@ -305,6 +326,7 @@ namespace Packet_Sniffer
 
                 textBlock.Inlines.Add(new Run(pkgInfo.packetAscii.Substring(pkgInfo.IP._bHeaderLength, pkgInfo.IP._usTotalLength - pkgInfo.IP._bHeaderLength)));
             }
+            //Display the raw packet data as hex
             else
             {
                 textBlock.Inlines.Clear();
@@ -320,146 +342,143 @@ namespace Packet_Sniffer
 
                 textBlock.Inlines.Add(new Run(pkgInfo.packetHex.Substring(pkgInfo.IP._bHeaderLength * 2, (pkgInfo.IP._usTotalLength - pkgInfo.IP._bHeaderLength) * 2)));
             }
-
-            /*textBlock.Inlines.Add(new Run(pkgInfo.IP._bVersionAndHeader.ToString("X")));
-            textBlock.Inlines.Add(new Run(pkgInfo.IP._bTypeOfService.ToString("X")));
-            textBlock.Inlines.Add(new Run(pkgInfo.IP._usTotalLength.ToString("X")));
-            textBlock.Inlines.Add(new Run(pkgInfo.IP._usIdentification.ToString("X")));
-            textBlock.Inlines.Add(new Run(pkgInfo.IP._usFlagsAndOffset.ToString("X")));
-            textBlock.Inlines.Add(new Run(pkgInfo.IP._bTTL.ToString("X")));
-            textBlock.Inlines.Add(new Run(pkgInfo.IP._bProtocol.ToString("X")));
-            textBlock.Inlines.Add(new Run(pkgInfo.IP._sChecksum.ToString("X")));
-            textBlock.Inlines.Add(new Run(pkgInfo.IP._uiSourceAddress.ToString("X")));
-            textBlock.Inlines.Add(new Run(pkgInfo.IP._uiDestinationAddress.ToString("X")));
-
-            textBlock.Inlines.Add(new Run("\n\n"));
-            textBlock.Inlines.Add(new Run("TCP:") { FontSize = 16, Foreground = Brushes.Blue, TextDecorations = TextDecorations.Underline });
-            textBlock.Inlines.Add(new Run("\n\n"));
-
-            textBlock.Inlines.Add(new Run(pkgInfo.TCP._usSourcePort.ToString("X")));
-            textBlock.Inlines.Add(new Run(pkgInfo.TCP._usDestinationPort.ToString("X")));
-            textBlock.Inlines.Add(new Run(pkgInfo.TCP._uiSequenceNumber.ToString("X")));
-            textBlock.Inlines.Add(new Run(pkgInfo.TCP._uiAckNumber.ToString("X")));
-            textBlock.Inlines.Add(new Run(pkgInfo.TCP._bHeaderLength.ToString("X")));
-            textBlock.Inlines.Add(new Run(pkgInfo.TCP._usDataOffsetAndFlags.ToString("X")));
-            textBlock.Inlines.Add(new Run(pkgInfo.TCP._usWindow.ToString("X")));
-            textBlock.Inlines.Add(new Run(pkgInfo.TCP._sChecksum.ToString("X")));
-            textBlock.Inlines.Add(new Run(pkgInfo.TCP._usUrgentPointer.ToString("X")));
-
-            byte[] tcpData = pkgInfo.TCP.Data;
-
-            for (int x = 0; x < pkgInfo.TCP._usMessageLength; x++)
-            {
-                textBlock.Inlines.Add(new Run(tcpData[x].ToString("X")));
-            }*/
         }
 
+        //Display the raw packet data as ASCII characters
         private void asciiButton_Checked(object sender, RoutedEventArgs e)
         {
-            if (showAscii != true)
+            if (showAscii != true && dataGrid.SelectedItems.Count > 0)
             {
-                if (dataGrid.SelectedItems.Count > 0)
+                showAscii = true;
+
+                PacketData currentPacket = (PacketData)dataGrid.SelectedItem;
+
+                //Get the key of the packet that is currently selected in the datagrid
+                string index = currentPacket.Number;
+
+                PacketInfo pkgInfo = new PacketInfo();
+
+                //Get the packet from the buffer whose key is the index obtained above
+                if (pkgBuffer.TryGetValue(index, out pkgInfo))
                 {
-                    showAscii = true;
+                    textBlock.Inlines.Clear();
 
-                    PacketData currentPacket = (PacketData)dataGrid.SelectedItem;
+                    textBlock.Inlines.Add(new Run("IP:") { FontSize = 16, Foreground = Brushes.Green, TextDecorations = TextDecorations.Underline });
+                    textBlock.Inlines.Add(new Run("\n\n"));
 
-                    //getting the number of selected packet which is used as  an key in dictionary
-                    string index = currentPacket.Number;
+                    textBlock.Inlines.Add(new Run(pkgInfo.packetAscii.Substring(0, pkgInfo.IP._bHeaderLength)));
 
-                    PacketInfo pkgInfo = new PacketInfo();
+                    textBlock.Inlines.Add(new Run("\n\n"));
+                    textBlock.Inlines.Add(new Run("TCP:") { FontSize = 16, Foreground = Brushes.Blue, TextDecorations = TextDecorations.Underline });
+                    textBlock.Inlines.Add(new Run("\n\n"));
 
-                    //trying to get data with specified key if this data exists 
-                    if (pkgBuffer.TryGetValue(index, out pkgInfo))
-                    {
-                        textBlock.Inlines.Clear();
-
-                        textBlock.Inlines.Add(new Run("IP:") { FontSize = 16, Foreground = Brushes.Green, TextDecorations = TextDecorations.Underline });
-                        textBlock.Inlines.Add(new Run("\n\n"));
-
-                        textBlock.Inlines.Add(new Run(pkgInfo.packetAscii.Substring(0, pkgInfo.IP._bHeaderLength)));
-
-                        textBlock.Inlines.Add(new Run("\n\n"));
-                        textBlock.Inlines.Add(new Run("TCP:") { FontSize = 16, Foreground = Brushes.Blue, TextDecorations = TextDecorations.Underline });
-                        textBlock.Inlines.Add(new Run("\n\n"));
-
-                        textBlock.Inlines.Add(new Run(pkgInfo.packetAscii.Substring(pkgInfo.IP._bHeaderLength, pkgInfo.IP._usTotalLength - pkgInfo.IP._bHeaderLength)));
-                    }
+                    textBlock.Inlines.Add(new Run(pkgInfo.packetAscii.Substring(pkgInfo.IP._bHeaderLength, pkgInfo.IP._usTotalLength - pkgInfo.IP._bHeaderLength)));
                 }
             }
         }
 
+        //Display the raw packet data as hex
         private void hexButton_Checked(object sender, RoutedEventArgs e)
         {
-            if (showAscii != false)
+            if (showAscii != false && dataGrid.SelectedItems.Count > 0)
             {
-                if (dataGrid.SelectedItems.Count > 0)
+                showAscii = false;
+
+                PacketData currentPacket = (PacketData)dataGrid.SelectedItem;
+
+                //Get the key of the packet that is currently selected in the datagrid
+                string index = currentPacket.Number;
+
+                PacketInfo pkgInfo = new PacketInfo();
+
+                //Get the packet from the buffer whose key is the index obtained above
+                if (pkgBuffer.TryGetValue(index, out pkgInfo))
                 {
-                    showAscii = false;
+                    textBlock.Inlines.Clear();
 
-                    PacketData currentPacket = (PacketData)dataGrid.SelectedItem;
+                    textBlock.Inlines.Add(new Run("IP:") { FontSize = 16, Foreground = Brushes.Green, TextDecorations = TextDecorations.Underline });
+                    textBlock.Inlines.Add(new Run("\n\n"));
 
-                    //getting the number of selected packet which is used as  an key in dictionary
-                    string index = currentPacket.Number;
+                    textBlock.Inlines.Add(new Run(pkgInfo.packetHex.Substring(0, pkgInfo.IP._bHeaderLength * 2)));
 
-                    PacketInfo pkgInfo = new PacketInfo();
+                    textBlock.Inlines.Add(new Run("\n\n"));
+                    textBlock.Inlines.Add(new Run("TCP:") { FontSize = 16, Foreground = Brushes.Blue, TextDecorations = TextDecorations.Underline });
+                    textBlock.Inlines.Add(new Run("\n\n"));
 
-                    //trying to get data with specified key if this data exists 
-                    if (pkgBuffer.TryGetValue(index, out pkgInfo))
-                    {
-                        textBlock.Inlines.Clear();
-
-                        textBlock.Inlines.Add(new Run("IP:") { FontSize = 16, Foreground = Brushes.Green, TextDecorations = TextDecorations.Underline });
-                        textBlock.Inlines.Add(new Run("\n\n"));
-
-                        textBlock.Inlines.Add(new Run(pkgInfo.packetHex.Substring(0, pkgInfo.IP._bHeaderLength * 2)));
-
-                        textBlock.Inlines.Add(new Run("\n\n"));
-                        textBlock.Inlines.Add(new Run("TCP:") { FontSize = 16, Foreground = Brushes.Blue, TextDecorations = TextDecorations.Underline });
-                        textBlock.Inlines.Add(new Run("\n\n"));
-
-                        textBlock.Inlines.Add(new Run(pkgInfo.packetHex.Substring(pkgInfo.IP._bHeaderLength * 2, (pkgInfo.IP._usTotalLength - pkgInfo.IP._bHeaderLength) * 2)));
-                    }
+                    textBlock.Inlines.Add(new Run(pkgInfo.packetHex.Substring(pkgInfo.IP._bHeaderLength * 2, (pkgInfo.IP._usTotalLength - pkgInfo.IP._bHeaderLength) * 2)));
                 }
             }
         }
 
-        private void maxBufferText_TextLoaded(object sender, TextChangedEventArgs e)
-        {
-            if (bufferProgress == null && Double.Parse(maxBufferText.Text) > 10)
-            {
-                maxBufferSize = Int32.Parse(maxBufferText.Text);
-            }
-        }
-
+        //Alter the progress bar and progress label as the user changes the maximum buffer size
         private void maxBufferText_TextChanged(object sender, KeyEventArgs e)
         {
+            //Only change the maximum buffer size when the user presses the enter key
             if (e.Key == Key.Return)
             {
-                if (bufferProgress != null && Double.Parse(maxBufferText.Text) > 10)
+                //Make sure the minimum buffer size is 10 packets
+                if (bufferProgress != null && Double.Parse(maxBufferText.Text) >= 10)
                 {
-                    bufferProgress.Maximum = Double.Parse(maxBufferText.Text);
-                    maxBufferSize = Int32.Parse(maxBufferText.Text);
-                    percentLabel.Content = (Math.Round(((double) numPacketsReceived / (double) maxBufferSize), 2) * 100).ToString() + "%";
+                    //Display an error if the user tries to set the maximum buffer size to a number smaller than the number of
+                    //packets that are already in the buffer
+                    if (pkgBuffer.Count < Double.Parse(maxBufferText.Text))
+                    {
+                        bufferProgress.Maximum = Double.Parse(maxBufferText.Text);
+                        maxBufferSize = Int32.Parse(maxBufferText.Text);
+                        percentLabel.Content = (Math.Round(((double)numPacketsReceived / (double)maxBufferSize), 2) * 100).ToString() + "%";
+                    }
+                    else
+                    {
+                        MessageBox.Show("Packet buffer size cannot be set to a number smaller than the number of packets already received.",
+                            "Packet Sniffer", MessageBoxButton.OK, MessageBoxImage.Error);
+
+                        //Set the maximum buffer size to the number of packets that has been received
+                        maxBufferText.Text = numPacketsReceived.ToString();
+                        bufferProgress.Maximum = numPacketsReceived;
+                        maxBufferSize = numPacketsReceived;
+                        percentLabel.Content = (Math.Round(((double)numPacketsReceived / (double)maxBufferSize), 2) * 100).ToString() + "%";
+
+                        MessageBox.Show("The packet buffer has reached its maximum capacity. Clear the buffer or increase the maximum buffer size in order to continue.",
+                           "Packet Sniffer", MessageBoxButton.OK, MessageBoxImage.Warning);
+
+                        Stop_Capturing();
+                    }
                 }
                 else if (bufferProgress != null && Double.Parse(maxBufferText.Text) < 10)
                 {
-                    MessageBox.Show("Buffer size cannot be less than 10. The buffer size was set to ten.", "Packet Sniffer", MessageBoxButton.OK, MessageBoxImage.Error);
-                    maxBufferText.Text = "10";
-                    bufferProgress.Maximum = 10.0;
-                    maxBufferSize = 10;
-                    percentLabel.Content = (Math.Round(((double)numPacketsReceived / (double)maxBufferSize), 2) * 100).ToString() + "%";
+                    MessageBox.Show("Buffer size cannot be less than 10.", "Packet Sniffer", MessageBoxButton.OK, MessageBoxImage.Error);
+
+                    //Display an error if the user tries to set the maximum buffer size to a number smaller than the number of
+                    //packets that are already in the buffer
+                    if (pkgBuffer.Count < 10)
+                    {
+                        maxBufferText.Text = "10";
+                        bufferProgress.Maximum = 10.0;
+                        maxBufferSize = 10;
+                        percentLabel.Content = (Math.Round(((double)numPacketsReceived / (double)maxBufferSize), 2) * 100).ToString() + "%";
+                    }
+                    else
+                    {
+                        //Set the maximum buffer size to the number of packets that has been received
+                        maxBufferText.Text = numPacketsReceived.ToString();
+                        bufferProgress.Maximum = numPacketsReceived;
+                        maxBufferSize = numPacketsReceived;
+                        percentLabel.Content = (Math.Round(((double)numPacketsReceived / (double)maxBufferSize), 2) * 100).ToString() + "%";
+
+                        MessageBox.Show("The packet buffer has reached its maximum capacity. Clear the buffer or increase the maximum buffer size in order to continue.",
+                            "Packet Sniffer", MessageBoxButton.OK, MessageBoxImage.Warning);
+
+                        Stop_Capturing();
+                    }
                 }
             }
         }
 
-        private void bufferClearButton_Click(object sender, RoutedEventArgs e)
+        //Set the icon to the nose image
+        private void Set_Icon()
         {
-            dataGrid.Items.Clear();
-            pkgBuffer.Clear();
-            bufferProgress.Value = 0;
-            numPacketsReceived = 0;
-            percentLabel.Content = "0%";
+            Uri iconUri = new Uri(@"C:\Users\SamJustice\Documents\Visual Studio 2015\Projects\Packet Sniffer\nose.png", UriKind.RelativeOrAbsolute);
+            window.Icon = BitmapFrame.Create(iconUri);
         }
     }
 }

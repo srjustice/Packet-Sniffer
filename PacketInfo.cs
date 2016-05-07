@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
+//This class was obtained from Sergej Kuznecov at http://www.coderbag.com/Programming-C/Building-a-Network-Sniffer-in-NET.
+
 namespace Packet_Sniffer
 {
     /// <summary>

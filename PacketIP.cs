@@ -5,6 +5,8 @@ using System.Text;
 using System.IO;
 using System.Net;
 
+//This class was obtained from Sergej Kuznecov at http://www.coderbag.com/Programming-C/Building-a-Network-Sniffer-in-NET.
+
 namespace Packet_Sniffer
 {
     public class PacketIP

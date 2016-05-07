@@ -4,7 +4,7 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:Packet_Sniffer"
-        mc:Ignorable="d" ResizeMode="NoResize" UseLayoutRounding="False" Width="700" Height="640" Title="Packet Sniffer">
+        mc:Ignorable="d" ResizeMode="NoResize" UseLayoutRounding="False" Width="700" Height="660" Title="Packet Sniffer">
     <Grid x:Name="grid" Margin="0" HorizontalAlignment="Center">
         <Grid.RowDefinitions>
             <RowDefinition Height="0.08*"/>
@@ -22,11 +22,11 @@
             <DataGrid.Columns>
                 <DataGridTextColumn x:Name="Number" Header="No." Binding="{Binding Number}" Width="0.05*" CanUserResize="False"/>
                 <DataGridTextColumn x:Name="Time_Stamp" Header="Time Stamp" Binding="{Binding Time_Stamp}" CanUserResize="False" Width="0.12*"/>
-                <DataGridTextColumn x:Name="Source" Header="Source" Binding="{Binding Source}" CanUserResize="False" Width="0.15*"/>
-                <DataGridTextColumn x:Name="Destination" Header="Destination" Binding="{Binding Destination}" Width="0.15*" CanUserResize="False"/>
+                <DataGridTextColumn x:Name="Source" Header="Source" Binding="{Binding Source}" CanUserResize="False" Width="0.2*"/>
+                <DataGridTextColumn x:Name="Destination" Header="Destination" Binding="{Binding Destination}" Width="0.2*" CanUserResize="False"/>
                 <DataGridTextColumn x:Name="Protocol" Header="Protocol" CanUserResize="False" Width="0.1*" Binding="{Binding Protocol}"/>
                 <DataGridTextColumn x:Name="Length" Header="Length" CanUserResize="False" Width="0.1*" Binding="{Binding Length}"/>
-                <DataGridTextColumn x:Name="Info" Header="Info" CanUserResize="False" Width="0.33*" Binding="{Binding Info}"/>
+                <DataGridTextColumn x:Name="Info" Header="Info" CanUserResize="False" Width="0.23*" Binding="{Binding Info}"/>
             </DataGrid.Columns>
         </DataGrid>
         <Grid Grid.Row="2">
@@ -52,20 +52,20 @@
                     <TextBlock x:Name="textBlock" Margin="0" TextWrapping="Wrap" ScrollViewer.CanContentScroll="True" />
                 </ScrollViewer>
             </Border>
-            <Label x:Name="packetDetailsLabel" Content="Packet Tree" HorizontalAlignment="Center" Margin="0,209,0,0" VerticalAlignment="Top"/>
-            <Label x:Name="asciiHexLabel" Content="Show Bytes:" Grid.Column="1" HorizontalAlignment="Left" Margin="46,209,0,0" VerticalAlignment="Top"/>
+            <Label x:Name="packetDetailsLabel" Content="Packet Tree" HorizontalAlignment="Center" Margin="0,217,0,0" VerticalAlignment="Top"/>
+            <Label x:Name="asciiHexLabel" Content="Show Bytes:" Grid.Column="1" HorizontalAlignment="Left" Margin="46,217,0,0" VerticalAlignment="Top"/>
             <Label x:Name="detailsSectionLabel" Content="Detailed Packet Information" HorizontalAlignment="Center" Margin="0,5,0,0" VerticalAlignment="Top" Grid.ColumnSpan="2"/>
-            <RadioButton x:Name="asciiButton" Content="Ascii" Grid.Column="1" HorizontalAlignment="Left" Margin="158,215,0,0" VerticalAlignment="Top" IsChecked="True" Checked="asciiButton_Checked"/>
-            <RadioButton x:Name="hexButton" Content="Hex" Grid.Column="1" HorizontalAlignment="Left" Margin="238,215,0,0" VerticalAlignment="Top" Checked="hexButton_Checked"/>
+            <RadioButton x:Name="asciiButton" Content="Ascii" Grid.Column="1" HorizontalAlignment="Left" Margin="158,223,0,0" VerticalAlignment="Top" IsChecked="True" Checked="asciiButton_Checked"/>
+            <RadioButton x:Name="hexButton" Content="Hex" Grid.Column="1" HorizontalAlignment="Left" Margin="238,223,0,0" VerticalAlignment="Top" Checked="hexButton_Checked"/>
         </Grid>
         <Label x:Name="interfaceLabel" Content="Choose Interface:" Margin="259,0,0,0" VerticalAlignment="Center" Height="24" Grid.Row="0" HorizontalAlignment="Left"/>
         <ComboBox x:Name="interfaceSelector" HorizontalAlignment="Left" Margin="379,0,0,0" Width="268" Height="22" Grid.Row="0" VerticalAlignment="Center" />
         <Button x:Name="Start_Button" Content="Start" Click="Start_Button_Click" Margin="37,0,0,0" Width="78" Height="22" HorizontalAlignment="Left" Background="LimeGreen" Grid.Row="0" VerticalAlignment="Center"/>
-        <TextBox x:Name="maxBufferText" Height="19" Margin="112,0,0,0" Text="1000" Width="48" HorizontalAlignment="Left" VerticalAlignment="Center" TextAlignment="Center" MaxLines="1" MaxLength="5" IsUndoEnabled="True" Padding="0" Grid.Row="3" KeyDown="maxBufferText_TextChanged" TextChanged="maxBufferText_TextLoaded"/>
-        <ProgressBar x:Name="bufferProgress" HorizontalAlignment="Left" Height="23" Margin="273,0,0,0" VerticalAlignment="Center" Width="352" Maximum="1000" Minimum="10" Grid.Row="3" />
+        <TextBox x:Name="maxBufferText" Height="19" Margin="112,0,0,0" Text="1000" Width="48" HorizontalAlignment="Left" VerticalAlignment="Center" TextAlignment="Center" MaxLines="1" MaxLength="5" IsUndoEnabled="True" Padding="0" Grid.Row="3" KeyDown="maxBufferText_TextChanged"/>
+        <ProgressBar x:Name="bufferProgress" HorizontalAlignment="Left" Height="23" Margin="273,0,0,0" VerticalAlignment="Center" Width="352" Maximum="1000" Grid.Row="3" />
         <Label x:Name="maxBufferLabel" Content="Buffer Size:" HorizontalAlignment="Left" Margin="17,12,0,11" VerticalAlignment="Center" Grid.Row="3"/>
         <Label x:Name="maxBufferLabel_Copy" Content="Buffer Fill:" HorizontalAlignment="Left" Margin="190,0,0,0" VerticalAlignment="Center" Width="67" Grid.Row="3"/>
-        <Label x:Name="percentLabel" HorizontalAlignment="Left" Margin="639,12,0,11" VerticalAlignment="Center" Content="0%" Grid.Row="3"/>
+        <Label x:Name="percentLabel" HorizontalAlignment="Left" Margin="635,12,0,11" VerticalAlignment="Center" Content="0%" Grid.Row="3"/>
         <Button x:Name="bufferClearButton" Content="Clear Buffer" HorizontalAlignment="Left" Margin="151,0,0,0" VerticalAlignment="Center" Width="75" Height="22" Click="bufferClearButton_Click"/>
     </Grid>
 </Window>
