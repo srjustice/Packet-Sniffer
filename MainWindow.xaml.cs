@@ -68,8 +68,6 @@ namespace Packet_Sniffer
                         Start_Button.Content = "Stop";
                         Start_Button.Background = Brushes.Red;
 
-                        isCapturing = true;
-
                         //Create a socket with the address family "internetwork" and protocol "IP"
                         internetSocket = new Socket(AddressFamily.InterNetwork, SocketType.Raw, ProtocolType.IP);
 
@@ -89,6 +87,9 @@ namespace Packet_Sniffer
                         //The socket is connected
                         isSocketConnected = true;
 
+                        //The application will now begin capturing packets
+                        isCapturing = true;
+
                         //Create the thread used to capture packets
                         captureThread = new Thread(Packet_Recieved);
                         captureThread.Name = "Capture Thread";
@@ -98,6 +99,9 @@ namespace Packet_Sniffer
                     }
                     catch (Exception ex)
                     {
+                        Start_Button.Content = "Start";
+                        Start_Button.Background = Brushes.LimeGreen;
+
                         MessageBox.Show(ex.Message, "Packet Sniffer", MessageBoxButton.OK, MessageBoxImage.Error);
                     }
                 }
