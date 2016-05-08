@@ -92,6 +92,7 @@ namespace Packet_Sniffer
                         //Create the thread used to capture packets
                         captureThread = new Thread(Packet_Recieved);
                         captureThread.Name = "Capture Thread";
+                        captureThread.IsBackground = true;
                         captureThread.Start();
 
                     }
