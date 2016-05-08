@@ -352,32 +352,36 @@ namespace Packet_Sniffer
         //Display the raw packet data as ASCII characters
         private void asciiButton_Checked(object sender, RoutedEventArgs e)
         {
-            if (showAscii != true && dataGrid.SelectedItems.Count > 0)
+            if (showAscii != true)
             {
                 showAscii = true;
 
-                PacketData currentPacket = (PacketData)dataGrid.SelectedItem;
-
-                //Get the key of the packet that is currently selected in the datagrid
-                string index = currentPacket.Number;
-
-                PacketInfo pkgInfo = new PacketInfo();
-
-                //Get the packet from the buffer whose key is the index obtained above
-                if (pkgBuffer.TryGetValue(index, out pkgInfo))
+                if (dataGrid.SelectedItems.Count > 0)
                 {
-                    textBlock.Inlines.Clear();
 
-                    textBlock.Inlines.Add(new Run("IP:") { FontSize = 16, Foreground = Brushes.Green, TextDecorations = TextDecorations.Underline });
-                    textBlock.Inlines.Add(new Run("\n\n"));
+                    PacketData currentPacket = (PacketData)dataGrid.SelectedItem;
 
-                    textBlock.Inlines.Add(new Run(pkgInfo.packetAscii.Substring(0, pkgInfo.IP._bHeaderLength)));
+                    //Get the key of the packet that is currently selected in the datagrid
+                    string index = currentPacket.Number;
 
-                    textBlock.Inlines.Add(new Run("\n\n"));
-                    textBlock.Inlines.Add(new Run("TCP:") { FontSize = 16, Foreground = Brushes.Blue, TextDecorations = TextDecorations.Underline });
-                    textBlock.Inlines.Add(new Run("\n\n"));
+                    PacketInfo pkgInfo = new PacketInfo();
 
-                    textBlock.Inlines.Add(new Run(pkgInfo.packetAscii.Substring(pkgInfo.IP._bHeaderLength, pkgInfo.IP._usTotalLength - pkgInfo.IP._bHeaderLength)));
+                    //Get the packet from the buffer whose key is the index obtained above
+                    if (pkgBuffer.TryGetValue(index, out pkgInfo))
+                    {
+                        textBlock.Inlines.Clear();
+
+                        textBlock.Inlines.Add(new Run("IP:") { FontSize = 16, Foreground = Brushes.Green, TextDecorations = TextDecorations.Underline });
+                        textBlock.Inlines.Add(new Run("\n\n"));
+
+                        textBlock.Inlines.Add(new Run(pkgInfo.packetAscii.Substring(0, pkgInfo.IP._bHeaderLength)));
+
+                        textBlock.Inlines.Add(new Run("\n\n"));
+                        textBlock.Inlines.Add(new Run("TCP:") { FontSize = 16, Foreground = Brushes.Blue, TextDecorations = TextDecorations.Underline });
+                        textBlock.Inlines.Add(new Run("\n\n"));
+
+                        textBlock.Inlines.Add(new Run(pkgInfo.packetAscii.Substring(pkgInfo.IP._bHeaderLength, pkgInfo.IP._usTotalLength - pkgInfo.IP._bHeaderLength)));
+                    }
                 }
             }
         }
@@ -385,32 +389,36 @@ namespace Packet_Sniffer
         //Display the raw packet data as hex
         private void hexButton_Checked(object sender, RoutedEventArgs e)
         {
-            if (showAscii != false && dataGrid.SelectedItems.Count > 0)
+            if (showAscii != false)
             {
                 showAscii = false;
 
-                PacketData currentPacket = (PacketData)dataGrid.SelectedItem;
-
-                //Get the key of the packet that is currently selected in the datagrid
-                string index = currentPacket.Number;
-
-                PacketInfo pkgInfo = new PacketInfo();
-
-                //Get the packet from the buffer whose key is the index obtained above
-                if (pkgBuffer.TryGetValue(index, out pkgInfo))
+                if (dataGrid.SelectedItems.Count > 0)
                 {
-                    textBlock.Inlines.Clear();
 
-                    textBlock.Inlines.Add(new Run("IP:") { FontSize = 16, Foreground = Brushes.Green, TextDecorations = TextDecorations.Underline });
-                    textBlock.Inlines.Add(new Run("\n\n"));
+                    PacketData currentPacket = (PacketData)dataGrid.SelectedItem;
 
-                    textBlock.Inlines.Add(new Run(pkgInfo.packetHex.Substring(0, pkgInfo.IP._bHeaderLength * 2)));
+                    //Get the key of the packet that is currently selected in the datagrid
+                    string index = currentPacket.Number;
 
-                    textBlock.Inlines.Add(new Run("\n\n"));
-                    textBlock.Inlines.Add(new Run("TCP:") { FontSize = 16, Foreground = Brushes.Blue, TextDecorations = TextDecorations.Underline });
-                    textBlock.Inlines.Add(new Run("\n\n"));
+                    PacketInfo pkgInfo = new PacketInfo();
 
-                    textBlock.Inlines.Add(new Run(pkgInfo.packetHex.Substring(pkgInfo.IP._bHeaderLength * 2, (pkgInfo.IP._usTotalLength - pkgInfo.IP._bHeaderLength) * 2)));
+                    //Get the packet from the buffer whose key is the index obtained above
+                    if (pkgBuffer.TryGetValue(index, out pkgInfo))
+                    {
+                        textBlock.Inlines.Clear();
+
+                        textBlock.Inlines.Add(new Run("IP:") { FontSize = 16, Foreground = Brushes.Green, TextDecorations = TextDecorations.Underline });
+                        textBlock.Inlines.Add(new Run("\n\n"));
+
+                        textBlock.Inlines.Add(new Run(pkgInfo.packetHex.Substring(0, pkgInfo.IP._bHeaderLength * 2)));
+
+                        textBlock.Inlines.Add(new Run("\n\n"));
+                        textBlock.Inlines.Add(new Run("TCP:") { FontSize = 16, Foreground = Brushes.Blue, TextDecorations = TextDecorations.Underline });
+                        textBlock.Inlines.Add(new Run("\n\n"));
+
+                        textBlock.Inlines.Add(new Run(pkgInfo.packetHex.Substring(pkgInfo.IP._bHeaderLength * 2, (pkgInfo.IP._usTotalLength - pkgInfo.IP._bHeaderLength) * 2)));
+                    }
                 }
             }
         }
