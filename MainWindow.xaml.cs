@@ -41,19 +41,20 @@ namespace Packet_Sniffer
         private Thread captureThread;
         private Dictionary<string, PacketInfo> pkgBuffer = new Dictionary<string, PacketInfo>();
         private int maxBufferSize = 1000;
-        private bool showAscii = true;      //true for Ascii, false for Hex
+        private int lastBufferSize = 1000;
+        private bool showAscii = true;
 
-
+        //Load the application
         public MainWindow()
         {
             InitializeComponent();
             Load_Interfaces();
-            Set_Icon();
         }
 
         private void Start_Button_Click(object sender, RoutedEventArgs e)
         {
 
+            //Verify an interface has been selected
             if (interfaceSelector.Text == "")
             {
                 MessageBox.Show("Select an Interface to capture the packets.", "Packet Sniffer",
@@ -124,6 +125,7 @@ namespace Packet_Sniffer
             {
                 try
                 {
+                    //Receive up to 4096 bytes
                     int bytesReceived = internetSocket.Receive(byteData, 0, byteData.Length, SocketFlags.None);
 
                     //Analyze the bytes that have been received
@@ -197,6 +199,7 @@ namespace Packet_Sniffer
                     }
                     else
                     {
+                        //Stop capturing packets because the buffer is full
                         MessageBox.Show("The packet buffer has reached its maximum capacity. Clear the buffer or increase the maximum buffer size in order to continue.", 
                             "Packet Sniffer", MessageBoxButton.OK, MessageBoxImage.Warning);
 
@@ -331,7 +334,7 @@ namespace Packet_Sniffer
 
                 textBlock.Inlines.Add(new Run(pkgInfo.packetAscii.Substring(pkgInfo.IP._bHeaderLength, pkgInfo.IP._usTotalLength - pkgInfo.IP._bHeaderLength)));
             }
-            //Display the raw packet data as hex
+            //Display the raw packet data as Hex
             else
             {
                 textBlock.Inlines.Clear();
@@ -386,7 +389,7 @@ namespace Packet_Sniffer
             }
         }
 
-        //Display the raw packet data as hex
+        //Display the raw packet data as Hex
         private void hexButton_Checked(object sender, RoutedEventArgs e)
         {
             if (showAscii != false)
@@ -426,72 +429,52 @@ namespace Packet_Sniffer
         //Alter the progress bar and progress label as the user changes the maximum buffer size
         private void maxBufferText_TextChanged(object sender, KeyEventArgs e)
         {
+            int userInput = 0;
+            
             //Only change the maximum buffer size when the user presses the enter key
             if (e.Key == Key.Return)
             {
+                //Verify the user's input is valid
+                try
+                {
+                    userInput = Int32.Parse(maxBufferText.Text);
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show("Invalid Input!", "Packet Sniffer", MessageBoxButton.OK, MessageBoxImage.Error);
+
+                    maxBufferText.Text = lastBufferSize.ToString();
+
+                    return;
+                }
+
                 //Make sure the minimum buffer size is 10 packets
-                if (bufferProgress != null && Double.Parse(maxBufferText.Text) >= 10)
+                if (bufferProgress != null && userInput >= 10)
                 {
                     //Display an error if the user tries to set the maximum buffer size to a number smaller than the number of
                     //packets that are already in the buffer
-                    if (pkgBuffer.Count < Double.Parse(maxBufferText.Text))
+                    if (pkgBuffer.Count < userInput)
                     {
-                        bufferProgress.Maximum = Double.Parse(maxBufferText.Text);
-                        maxBufferSize = Int32.Parse(maxBufferText.Text);
+                        bufferProgress.Maximum = (double)userInput;
+                        maxBufferSize = userInput;
                         percentLabel.Content = (Math.Round(((double)numPacketsReceived / (double)maxBufferSize), 2) * 100).ToString() + "%";
+                        lastBufferSize = userInput;
                     }
                     else
                     {
                         MessageBox.Show("Packet buffer size cannot be set to a number smaller than the number of packets already received.",
                             "Packet Sniffer", MessageBoxButton.OK, MessageBoxImage.Error);
 
-                        //Set the maximum buffer size to the number of packets that has been received
-                        maxBufferText.Text = numPacketsReceived.ToString();
-                        bufferProgress.Maximum = numPacketsReceived;
-                        maxBufferSize = numPacketsReceived;
-                        percentLabel.Content = (Math.Round(((double)numPacketsReceived / (double)maxBufferSize), 2) * 100).ToString() + "%";
-
-                        MessageBox.Show("The packet buffer has reached its maximum capacity. Clear the buffer or increase the maximum buffer size in order to continue.",
-                           "Packet Sniffer", MessageBoxButton.OK, MessageBoxImage.Warning);
-
-                        Stop_Capturing();
+                        maxBufferText.Text = lastBufferSize.ToString();
                     }
                 }
-                else if (bufferProgress != null && Double.Parse(maxBufferText.Text) < 10)
+                else if (bufferProgress != null && userInput < 10)
                 {
                     MessageBox.Show("Buffer size cannot be less than 10.", "Packet Sniffer", MessageBoxButton.OK, MessageBoxImage.Error);
 
-                    //Display an error if the user tries to set the maximum buffer size to a number smaller than the number of
-                    //packets that are already in the buffer
-                    if (pkgBuffer.Count < 10)
-                    {
-                        maxBufferText.Text = "10";
-                        bufferProgress.Maximum = 10.0;
-                        maxBufferSize = 10;
-                        percentLabel.Content = (Math.Round(((double)numPacketsReceived / (double)maxBufferSize), 2) * 100).ToString() + "%";
-                    }
-                    else
-                    {
-                        //Set the maximum buffer size to the number of packets that has been received
-                        maxBufferText.Text = numPacketsReceived.ToString();
-                        bufferProgress.Maximum = numPacketsReceived;
-                        maxBufferSize = numPacketsReceived;
-                        percentLabel.Content = (Math.Round(((double)numPacketsReceived / (double)maxBufferSize), 2) * 100).ToString() + "%";
-
-                        MessageBox.Show("The packet buffer has reached its maximum capacity. Clear the buffer or increase the maximum buffer size in order to continue.",
-                            "Packet Sniffer", MessageBoxButton.OK, MessageBoxImage.Warning);
-
-                        Stop_Capturing();
-                    }
+                    maxBufferText.Text = lastBufferSize.ToString();
                 }
             }
-        }
-
-        //Set the icon to the nose image
-        private void Set_Icon()
-        {
-            Uri iconUri = new Uri(@"C:\Users\SamJustice\Documents\Visual Studio 2015\Projects\Packet Sniffer\nose.png", UriKind.RelativeOrAbsolute);
-            window.Icon = BitmapFrame.Create(iconUri);
         }
     }
 }
